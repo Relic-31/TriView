@@ -8,7 +8,7 @@ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]
 const mix=(a,b,t)=>a.map((x,i)=>x+(b[i]-x)*t);
 const key=p=>p.map(x=>Math.round(x*1e6)/1e6).join(",");
 const edgeKey=(a,b)=>[key(a),key(b)].sort().join("|");
-const names=["Offset ramp","Forked wedge","Corner-cut terrace","Diagonal saddle","Twin ramp channels","Notched slope","Oblique roof","Stepped rib"];
+const names=["Offset ramp","Forked wedge","Corner-cut terrace","Diagonal saddle","Twin ramp channels","Notched slope","Oblique roof","Stepped rib","Chamfered block staircase","C-shaped twin braces","Corner ramp cradle","Four corner towers","Offset chair block","Folded ramp basin","Uneven courtyard","Dogleg staircase","Cross buttresses","Twin towers with a saddle","Chamfered stair crown","Spiral terraces"];
 
 /** Cells are CCW triangles in x/y with a linear top height at each vertex. */
 function fromCells(cells,kind=5,name="Planar solid") {
@@ -70,6 +70,7 @@ function fromCells(cells,kind=5,name="Planar solid") {
   return {kind,name,W:max(0),D:max(1),H:max(2),mesh:{tris,borders,sweeps:[]},planar:true};
 }
 function makeModel(kind,random=Math.random) {
+  if(kind>=13) return makeBlockModel(kind,random);
   const family=kind-5,base=1+Math.floor(random()*3)*.5,high=4+Math.floor(random()*3);
   const reverseX=random()<.5,reverseY=random()<.5,diagonal=random()<.5;
   const ramp=(y)=>base+(high-base)*y/6;
@@ -111,6 +112,66 @@ function makeModel(kind,random=Math.random) {
   }
   return fromCells(cells,kind,names[family]);
 }
+
+/** Worksheet-inspired 3-by-3 blocks. Cell heights and sloping faces vary together. */
+function makeBlockModel(kind,random) {
+  const family=kind-13,base=1+Math.floor(random()*3)*.5,high=4+Math.floor(random()*3);
+  const step=(high-base)/2,unitX=1.5+.5*Math.floor(random()*2),unitY=1.5+.5*Math.floor(random()*2);
+  const reverseX=random()<.5,reverseY=random()<.5,swap=random()<.5;
+  const cells=[];
+  for(let i=0;i<3;i++)for(let j=0;j<3;j++) {
+    const corners=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]];
+    // A diagonal corner cut uses x+y=constant; folded roofs use x-y=constant.
+    const triangles=family===10?[[0,1,3],[1,2,3]]:[[0,1,2],[0,2,3]];
+    for(const indices of triangles) {
+      const points=indices.map(n=>corners[n]);
+      const cx=points.reduce((sum,p)=>sum+p[0],0)/3,cy=points.reduce((sum,p)=>sum+p[1],0)/3;
+      let height;
+      if(family===0) { // Six-cell stair footprint with a chamfered upper step.
+        if(i>j)continue;
+        height=(X,Y)=>i===0?base+j*step:i===1&&j===2?high-step*(X-1):base;
+      } else if(family===1) { // A C-shaped plan with two sloping arms.
+        if(i>0&&j===1)continue;
+        height=(X,Y)=>i===0?high:high-step*(X-1);
+      } else if(family===2) { // Two perpendicular ramps meet at the high rear corner.
+        height=(X,Y)=>i===0&&j===2?high:i===0?base+step*Y:j===2?high-step*(X-1):base;
+      } else if(family===3) { // Four equal towers connected by a low base.
+        height=()=>i!==1&&j!==1?high:base;
+      } else if(family===4) { // A notched chair-shaped block with two front bevels.
+        if(i===2&&j===0)continue;
+        height=(X,Y)=>j===2?high:j===1?(i===1?base:base+step):i===0?base+step*Y:base+step*(2-X);
+      } else if(family===5) { // Folded diagonal basin with a raised corner shoulder.
+        height=(X,Y)=>i===0&&j===2?high:i===0?base+step*Y:j===2?high-step*(X-1):base+step*Math.max(0,Y-X+1);
+      } else if(family===6) { // Unequal towers and short ramps around a recessed court.
+        const levels=[[2,0,1],[0,0,0],[1,0,2]];
+        height=(X,Y)=>i===0&&j===1?base+step*(2-Y):i===1&&j===2?base+step*(X-1):base+step*levels[j][i];
+      } else if(family===7) { // A dogleg footprint with three levels and a ramp.
+        if(i===2&&j===0||i===0&&j===2)continue;
+        height=(X,Y)=>i===1&&j===1?base+step*Y:base+step*j;
+      } else if(family===8) { // A central boss supported by four triangular ribs.
+        height=(X,Y)=>i===1&&j===1?high:i===1?(j===0?base+2*step*Y:high-2*step*(Y-2)):
+          j===1?(i===0?base+2*step*X:high-2*step*(X-2)):base;
+      } else if(family===9) { // Opposite towers border a diagonal V-shaped saddle.
+        height=(X,Y)=>i===0&&j===2||i===2&&j===0?high:base+step*Math.abs(X-Y);
+      } else if(family===10) { // Cut opposite plan corners and slope the upper crown.
+        if(cx+cy<1||cx+cy>5)continue;
+        height=(X,Y)=>i===2||j===2?high-.5*(6-X-Y):base+step*Math.max(i,j);
+      } else { // Staggered terraces spiral around a low central square.
+        const levels=[[0,0,1],[1,0,1],[1,2,2]];
+        height=(X,Y)=>i===1&&j===0?base+step*(X-1):i===2&&j===1?base+step*Y:
+          i===1&&j===2?base+step*X:base+step*levels[j][i];
+      }
+      let cell=points.map(([X,Y])=>{
+        const x=(reverseX?3-X:X)*unitX,y=(reverseY?3-Y:Y)*unitY,z=height(X,Y);
+        return swap?[y,x,z]:[x,y,z];
+      });
+      if((Number(reverseX)+Number(reverseY)+Number(swap))&1)cell.reverse();
+      cells.push(cell);
+    }
+  }
+  return fromCells(cells,kind,names[kind-5]);
+}
+
 function project(m,p,v) {
   const [x,y,z]=p;
   return v===0?[x,m.H-z,-y]:v===1?[m.D-y,m.H-z,-x]:[x,m.D-y,z];

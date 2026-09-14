@@ -28,12 +28,17 @@ test("rear counterbore rings are hidden; front counterbore rings are visible", (
   assert.equal(rearRings.filter(e => e.type === "dash").length, 2);
   assert.equal(rearRings.filter(e => e.type === "solid").length, 2);
 });
-test("100 seeded questions preserve silhouettes and accept the complete answer", () => {
+test("100 seeded questions across every family preserve silhouettes and accept the complete answer", () => {
   const random = rng(3102026);
   let previous = -1;
   const seen = new Set();
   for (let i = 0; i < 100; i++) {
-    const q = G.makeQuestion(previous, i, random);
+    // Cycle through all families once, then exercise unrestricted seeded selection.
+    let selection = true;
+    const q = G.makeQuestion(previous, i, () => {
+      if (selection) { selection = false; if (i < 5 + context.TriView.Polyhedra.names.length) return 0; }
+      return random();
+    });
     assert.notEqual(q.model.kind, previous);
     previous = q.model.kind;
     seen.add(previous);
@@ -49,7 +54,7 @@ test("100 seeded questions preserve silhouettes and accept the complete answer",
     assert.equal(G.grade(q.full, q.missing, empty()).ok, false);
     assert.ok(q.mesh.tris.flatMap(t => [...t.p.flat(), ...t.n]).every(Number.isFinite));
   }
-  assert.equal(seen.size, 13);
+  assert.equal(seen.size, 5 + context.TriView.Polyhedra.names.length);
 });
 test("grading accepts split lines and reverse drawing direction", () => {
   const line = {...G.ln([0,0],[4,0]),type:"dash"};
@@ -125,7 +130,7 @@ test("irregular plan cuts retain their diagonal silhouette",()=>{
 });
 test("all planar families have positive material and drawable missing lines",()=>{
   const random=rng(42131);
-  for(let kind=5;kind<13;kind++)for(let variant=0;variant<12;variant++) {
+  for(let kind=5;kind<5+context.TriView.Polyhedra.names.length;kind++)for(let variant=0;variant<12;variant++) {
     const m=G.makeModel(kind,random);
     assert.ok(m.mesh.tris.flatMap(t=>t.p).every(p=>p[2]>=-1e-6));
     const full=[0,1,2].map(v=>G.projection(m,v));
@@ -133,4 +138,32 @@ test("all planar families have positive material and drawable missing lines",()=
       [...e.a,...e.b].every(n=>Math.abs(n*4-Math.round(n*4))<.001));
     assert.ok(choices.length>0,"no drawable omissions for "+kind);
   }
+});
+
+function solidVolume(m) {
+  return m.mesh.tris.reduce((sum,{p:[a,b,c]})=>sum+
+    (a[0]*(b[1]*c[2]-b[2]*c[1])+a[1]*(b[2]*c[0]-b[0]*c[2])+a[2]*(b[0]*c[1]-b[1]*c[0]))/6,0);
+}
+test("worksheet staircase and open C braces have the expected material volume",()=>{
+  const staircase=G.makeModel(13,()=>.99),braces=G.makeModel(14,()=>.99);
+  // Six 2x2 cells: heights 2, 4, 2, 6, a 6-to-4 ramp, and 2.
+  assert.ok(Math.abs(solidVolume(staircase)-84)<1e-6);
+  // 2x6x6 spine + two 4x2 ramps with mean height 4.
+  assert.ok(Math.abs(solidVolume(braces)-136)<1e-6);
+  const bottomArea=braces.mesh.tris.filter(t=>t.n[2]<-.99).reduce((sum,{p:[a,b,c]})=>
+    sum+Math.abs((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]))/2,0);
+  assert.ok(Math.abs(bottomArea-28)<1e-6); // C plan: 36 minus an 8-unit opening.
+});
+test("four corner towers preserve a U-shaped silhouette in both elevation views",()=>{
+  const m=G.makeModel(16,()=>.99);
+  const outline=G.poly([[0,6],[6,6],[6,0],[4,0],[4,4],[2,4],[2,0],[0,0]]);
+  for(const view of [0,1]) {
+    const projected=G.projection(m,view),silhouette=projected.filter(e=>e.protect);
+    assert.equal(silhouette.length,8);
+    assert.ok(silhouette.every(e=>e.type==="solid"));
+    for(const line of outline)for(const p of G.sample(line,.2))
+      assert.ok(silhouette.some(e=>G.distance(p,e)<1e-5));
+    assert.equal(projected.filter(e=>e.type==="dash").length,2);
+  }
+  assert.ok(Math.abs(solidVolume(m)-136)<1e-6); // Base plus four corner posts.
 });

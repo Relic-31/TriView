@@ -21,7 +21,7 @@ These are manual checks to perform before a release, not a claim that every list
 - Submit an empty answer, a wrong line type and an extra line. Each should fail and offer retry on the same question.
 - Retry should clear user strokes and preserve the model and omissions.
 - Complete an answer accurately: correct feedback appears, the completed count increments once, then a new question appears after about 1.4 seconds.
-- Verify protected outer outlines remain present for all 13 solid families.
+- Verify protected outer outlines remain present for all 25 solid families.
 
 ## Pointer and keyboard behavior
 

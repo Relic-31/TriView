@@ -303,7 +303,8 @@ function shuffle(list,random=Math.random) {
   return a;
 }
 function makeQuestion(previousKind=-1,number=0,random=Math.random) {
-  const kind=previousKind<0?5:(previousKind+1+Math.floor(random()*12))%13;
+  const familyCount=5+root.TriView.Polyhedra.names.length;
+  const kind=previousKind<0?13+Math.floor(random()*(familyCount-13)):(previousKind+1+Math.floor(random()*(familyCount-1)))%familyCount;
   const model=makeModel(kind,random),full=[0,1,2].map(v=>projection(model,v));
   const candidates=shuffle(full.flatMap((list,v)=>list.filter(e=>!e.protect&&curveLength(e)>.5&&
     (e.k!=="line"||[...e.a,...e.b].every(n=>Math.abs(n*4-Math.round(n*4))<.001))).map(e=>({e,v}))),random);

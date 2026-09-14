@@ -15,7 +15,7 @@ No download or installation needed.
 3. Check your answer: retry mistakes or advance to the next exercise.
 4. Reveal and rotate the matching 3D model for a hint.
 
-Includes 13 solid families: irregular ramps, oblique faces, corner cuts, stepped ribs, recessed channels, curved profiles and counterbored holes. Outer silhouettes stay intact.
+Includes 25 solid families: block staircases, C-shaped braces, corner towers, folded basins, cross buttresses, oblique roofs, irregular cuts and curved profiles with counterbored holes. Heights, proportions and orientations vary between exercises. Outer silhouettes stay intact.
 
 ## Development
 
