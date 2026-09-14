@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="assets/styles.css">
   <script defer src="src/geometry.js"></script>
   <script defer src="src/polyhedra.js"></script>
+  <script defer src="src/worksheets.js"></script>
   <script defer src="src/renderer.js"></script>
   <script defer src="src/app.js"></script>
 </head>
@@ -27,6 +28,11 @@
       <div class="exercise-heading">
         <div><span id="questionNo" class="question-number">Exercise 01</span><span id="missingLabel" class="badge">Generating exercise</span></div>
         <span class="progress">Completed <strong id="solved">0</strong></span>
+      </div>
+      <div class="model-picker">
+        <label for="modelFamily">Practice model</label>
+        <select id="modelFamily" aria-describedby="modelChoiceHelp"><option value="">Mixed practice · All models</option></select>
+        <span id="modelChoiceHelp">Choose a worksheet model, or mix the full collection.</span>
       </div>
       <div class="toolbar">
         <div class="tool-group" role="group" aria-label="Line type">
@@ -76,6 +82,7 @@
     <details id="modelDetails" class="model-panel">
       <summary><span>Reveal the 3D model</span><span class="small">Need a hint? Try another angle.</span></summary>
       <div class="model-content">
+        <p id="modelName" class="model-name"></p>
         <canvas id="model" width="600" height="380" tabindex="0" aria-label="3D model: drag or use arrow keys to rotate; scroll to zoom">Your browser does not support Canvas. Please use a modern browser.</canvas>
         <div class="model-tools"><p>Drag to rotate · Scroll to zoom · Arrow keys to rotate</p><div class="tool-group" role="group" aria-label="3D camera presets"><button type="button" data-camera="iso">Reset view</button><button type="button" data-camera="front">Front</button><button type="button" data-camera="left">Left</button><button type="button" data-camera="top">Top</button></div></div>
       </div>

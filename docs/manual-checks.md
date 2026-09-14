@@ -21,7 +21,7 @@ These are manual checks to perform before a release, not a claim that every list
 - Submit an empty answer, a wrong line type and an extra line. Each should fail and offer retry on the same question.
 - Retry should clear user strokes and preserve the model and omissions.
 - Complete an answer accurately: correct feedback appears, the completed count increments once, then a new question appears after about 1.4 seconds.
-- Verify protected outer outlines remain present for all 25 solid families.
+- Verify protected outer outlines remain present for all 49 solid families.
 
 ## Pointer and keyboard behavior
 
@@ -36,3 +36,12 @@ These are manual checks to perform before a release, not a claim that every list
 - Confirm holes stay open and curved walls remain joined while rotating.
 - Hide/show the model and solve a question while it is open. The next question must hide and reset it.
 - Compare the model's front/left/top presets with the corresponding two-dimensional views.
+
+## Numbered worksheet models
+
+- Use the Practice model picker to inspect A1–A8 and B1–B8 individually; numbers follow rows from left to right, top to bottom within each worksheet.
+- Check that A7/A8 have actual underside openings, B3 has an open hole in its cantilever slab, and B7 has a recessed collar.
+- Rotate to see the lower faces of B2/B4 and the webs of C3/C8.
+- Select a different model during error feedback and during the success delay. Only the newly selected exercise should remain.
+- Solve a selected reference: the next exercise should use the same model family with new proportions/orientation and omissions.
+- Return to Mixed practice to include the entire collection.

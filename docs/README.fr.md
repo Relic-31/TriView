@@ -6,6 +6,6 @@ Complétez les lignes manquantes dans les vues de face, de gauche et de dessus. 
 
 Dépliez **Reveal the 3D model** pour tourner le solide et observer ses détails. L'interface est en anglais et utilise la projection du premier dièdre.
 
-Vingt-cinq familles de solides couvrent les escaliers de blocs, les doubles contreforts inclinés, les tours d'angle, les creux à faces obliques et les surfaces courbes avec des trous lamés. Leurs hauteurs, proportions et orientations varient. Les silhouettes extérieures sont conservées.
+Quarante-neuf familles couvrent les gradins, les plans inclinés, les rainures, les pyramides, les portiques, les porte-à-faux et les surfaces courbes. Le sélecteur permet de choisir les 16 modèles numérotés des deux planches de référence, ainsi que huit créations similaires. Consultez le [catalogue](model-catalog.md). Les proportions et orientations varient.
 
 Aucune installation n'est nécessaire. Pour contribuer, consultez le [guide de développement](../CONTRIBUTING.md) et les [vérifications manuelles](manual-checks.md). Licence [MIT](../LICENSE).

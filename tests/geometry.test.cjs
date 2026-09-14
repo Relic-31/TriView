@@ -6,6 +6,7 @@ const vm = require("node:vm");
 const context = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/geometry.js"), "utf8"), context);
 vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/polyhedra.js"), "utf8"), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/worksheets.js"), "utf8"), context);
 const G = context.TriView.Geometry;
 const empty = () => [[], [], []];
 function rng(seed) { return () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; }; }
@@ -36,7 +37,7 @@ test("100 seeded questions across every family preserve silhouettes and accept t
     // Cycle through all families once, then exercise unrestricted seeded selection.
     let selection = true;
     const q = G.makeQuestion(previous, i, () => {
-      if (selection) { selection = false; if (i < 5 + context.TriView.Polyhedra.names.length) return 0; }
+      if (selection) { selection = false; if (i < G.familyNames().length) return 0; }
       return random();
     });
     assert.notEqual(q.model.kind, previous);
@@ -54,7 +55,7 @@ test("100 seeded questions across every family preserve silhouettes and accept t
     assert.equal(G.grade(q.full, q.missing, empty()).ok, false);
     assert.ok(q.mesh.tris.flatMap(t => [...t.p.flat(), ...t.n]).every(Number.isFinite));
   }
-  assert.equal(seen.size, 5 + context.TriView.Polyhedra.names.length);
+  assert.equal(seen.size, G.familyNames().length);
 });
 test("grading accepts split lines and reverse drawing direction", () => {
   const line = {...G.ln([0,0],[4,0]),type:"dash"};
@@ -130,7 +131,7 @@ test("irregular plan cuts retain their diagonal silhouette",()=>{
 });
 test("all planar families have positive material and drawable missing lines",()=>{
   const random=rng(42131);
-  for(let kind=5;kind<5+context.TriView.Polyhedra.names.length;kind++)for(let variant=0;variant<12;variant++) {
+  for(let kind=5;kind<G.familyNames().length;kind++)for(let variant=0;variant<12;variant++) {
     const m=G.makeModel(kind,random);
     assert.ok(m.mesh.tris.flatMap(t=>t.p).every(p=>p[2]>=-1e-6));
     const full=[0,1,2].map(v=>G.projection(m,v));
@@ -166,4 +167,53 @@ test("four corner towers preserve a U-shaped silhouette in both elevation views"
     assert.equal(projected.filter(e=>e.type==="dash").length,2);
   }
   assert.ok(Math.abs(solidVolume(m)-136)<1e-6); // Base plus four corner posts.
+});
+
+test("bridge cells preserve an actual underside opening",()=>{
+  const cells=[
+    ...rectangleCells(0,0,1,4,()=>4),
+    ...rectangleCells(1,0,3,4,()=>4).map(t=>t.map(p=>[...p,2])),
+    ...rectangleCells(3,0,4,4,()=>4)
+  ];
+  const m=context.TriView.Polyhedra.fromCells(cells);
+  assert.ok(Math.abs(solidVolume(m)-48)<1e-6); // 4x4x4 block minus a 2x4x2 tunnel.
+  const front=G.projection(m,0).filter(e=>e.protect);
+  const outline=G.poly([[0,4],[1,4],[1,2],[3,2],[3,4],[4,4],[4,0],[0,0]]);
+  assert.equal(front.length,8);
+  for(const e of outline)for(const p of G.sample(e,.2))
+    assert.ok(front.some(t=>t.type==="solid"&&G.distance(p,t)<1e-5));
+});
+test("the pierced cantilever has an open rectangular hole and the correct volume",()=>{
+  const m=G.makeModel(35,()=>.99);
+  assert.ok(Math.abs(solidVolume(m)-76)<1e-6); // 32-unit slab + 11x4-unit L support.
+  const top=G.projection(m,2);
+  const hole=G.poly([[2,2],[4,2],[4,4],[2,4]]);
+  for(const line of hole)for(const p of G.sample(line,.2))
+    assert.ok(top.some(e=>e.protect&&e.type==="solid"&&G.distance(p,e)<1e-5));
+  const caps=m.mesh.tris.filter(t=>t.p.every(p=>Math.abs(p[2]-5)<1e-6));
+  const capArea=caps.reduce((sum,{p:[a,b,c]})=>sum+Math.abs((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]))/2,0);
+  assert.ok(Math.abs(capArea-32)<1e-6);
+});
+test("pyramidal faces and the clipped diagonal web have independently known volumes",()=>{
+  const pyramid=G.makeModel(30,()=>.99),frame=G.makeModel(48,()=>.99);
+  // 35-unit chamfered plinth + 16x3 block + 16x2/3 pyramid.
+  assert.ok(Math.abs(solidVolume(pyramid)-281/3)<1e-6);
+  // A 20-unit frame and 7-unit diagonal web, one unit thick, plus 11x3 support.
+  assert.ok(Math.abs(solidVolume(frame)-60)<1e-6,"frame volume "+solidVolume(frame));
+});
+test("all 16 reference IDs can be selected and regenerate valid questions",()=>{
+  const random=rng(3104916);
+  const seen=new Set();
+  for(let kind=25;kind<41;kind++) {
+    const q=G.makeQuestion(kind,0,random,kind);
+    assert.equal(q.model.kind,kind);
+    seen.add(q.model.reference);
+    assert.ok(G.grade(q.full,q.missing,q.missing).ok);
+    const retry=G.makeQuestion(kind,1,random,kind);
+    assert.equal(retry.model.reference,q.model.reference);
+    for(const e of retry.missing.flat())if(e.k==="line")
+      assert.ok([...e.a,...e.b].every(n=>Math.abs(n*4-Math.round(n*4))<.001));
+  }
+  assert.equal(seen.size,16);
+  assert.ok(seen.has("A1")&&seen.has("A8")&&seen.has("B1")&&seen.has("B8"));
 });

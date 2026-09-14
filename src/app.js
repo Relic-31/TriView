@@ -4,9 +4,14 @@
 function start() {
   const $=id=>document.getElementById(id);
   try {
-    if(!globalThis.TriView?.Geometry||!globalThis.TriView?.Polyhedra||!globalThis.TriView?.Renderer)
+    if(!globalThis.TriView?.Geometry||!globalThis.TriView?.Polyhedra||!globalThis.TriView?.Worksheets||!globalThis.TriView?.Renderer)
       throw new Error("Some app files did not load. Keep the src folder intact and reload the page.");
-    const {PI,TAU,EPS,ln,ar,pt,round,mod,distance,grade,makeQuestion}=TriView.Geometry;
+    const {PI,TAU,EPS,ln,ar,pt,round,mod,distance,grade,makeQuestion,familyNames}=TriView.Geometry;
+    const catalog=familyNames();
+    const groups=[["Original collection",0,25],["Worksheet A",25,33],["Worksheet B",33,41],["Related models",41,catalog.length]];
+    $("modelFamily").innerHTML='<option value="">Mixed practice · All models</option>'+
+      groups.map(([name,start,end])=>'<optgroup label="'+name+'">'+catalog.slice(start,end).map((name,i)=>
+        '<option value="'+(start+i)+'">'+name+'</option>').join("")+'</optgroup>').join("");
     const svgs=[0,1,2].map(v=>$("view"+v));
     const SCALE=30,OX=60,OY=55,sx=x=>OX+x*SCALE,sy=y=>OY+y*SCALE;
     let q=null,tool="solid",shape="line",clockwise=true;
@@ -227,13 +232,16 @@ function start() {
     });
     document.querySelectorAll("[data-camera]").forEach(button=>button.addEventListener("click",()=>renderer.setCamera(button.dataset.camera)));
     function newQuestion() {
-      clearTimeout(nextTimer);q=makeQuestion(previousKind,number);previousKind=q.model.kind;number++;
+      clearTimeout(nextTimer);
+      const selected=$("modelFamily").value||"";
+      q=makeQuestion(previousKind,number,Math.random,selected===""?null:Number(selected));previousKind=q.model.kind;number++;
       cancel();hover=null;cursors=[[0,0],[0,0],[0,0]];
       $("questionNo").textContent="Exercise "+String(number).padStart(2,"0");
       $("missingLabel").textContent="Missing: "+q.count+" line(s)";
-      $("modelDetails").open=false;renderer.setQuestion(q);chooseTool("solid");
+      $("modelDetails").open=false;$("modelName").textContent=q.model.name;renderer.setQuestion(q);chooseTool("solid");
       message("Outlines are complete. Restore the missing internal edges or hidden lines.");render();
     }
+    $("modelFamily").addEventListener("change",newQuestion);
     newQuestion();
   } catch(error) {
     console.error(error);

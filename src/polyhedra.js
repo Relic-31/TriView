@@ -10,9 +10,9 @@ const key=p=>p.map(x=>Math.round(x*1e6)/1e6).join(",");
 const edgeKey=(a,b)=>[key(a),key(b)].sort().join("|");
 const names=["Offset ramp","Forked wedge","Corner-cut terrace","Diagonal saddle","Twin ramp channels","Notched slope","Oblique roof","Stepped rib","Chamfered block staircase","C-shaped twin braces","Corner ramp cradle","Four corner towers","Offset chair block","Folded ramp basin","Uneven courtyard","Dogleg staircase","Cross buttresses","Twin towers with a saddle","Chamfered stair crown","Spiral terraces"];
 
-/** Cells are CCW triangles in x/y with a linear top height at each vertex. */
+/** CCW triangular cells: [x,y,top,bottom?], with linear upper/lower surfaces. */
 function fromCells(cells,kind=5,name="Planar solid") {
-  const tris=[],sides=new Map();
+  const tris=[],sides=new Map(),rawSides=[];
   function triangle(a,b,c,normal) {
     let n=cross(sub(b,a),sub(c,a)),length=Math.hypot(...n);
     if(length<EPS)return;
@@ -21,29 +21,56 @@ function fromCells(cells,kind=5,name="Planar solid") {
     tris.push({p:[a,b,c],n});
   }
   for(const cell of cells) {
-    const top=cell.map(p=>p.slice()),bottom=cell.map(p=>[p[0],p[1],0]);
-    triangle(...top);triangle(bottom[2],bottom[1],bottom[0],[0,0,-1]);
+    // Optional fourth coordinate is the lower surface; default keeps height-field solids.
+    if(cell.every(p=>p[2]-(p[3]||0)<EPS))continue;
+    const top=cell.map(p=>p.slice(0,3)),bottom=cell.map(p=>[p[0],p[1],p[3]||0]);
+    triangle(...top);triangle(bottom[2],bottom[1],bottom[0]);
     for(let i=0;i<3;i++) {
-      const a=top[i],b=top[(i+1)%3],k=edgeKey(a.slice(0,2),b.slice(0,2));
+      const a=top[i],b=top[(i+1)%3];
+      rawSides.push({a,b,low:[bottom[i][2],bottom[(i+1)%3][2]]});
+    }
+  }
+  // Align partial footprint edges before subtracting adjacent vertical intervals.
+  const planVertices=[...new Map(rawSides.flatMap(s=>[s.a,s.b]).map(p=>[key(p.slice(0,2)),p])).values()];
+  for(const side of rawSides) {
+    const {a,b,low}=side,dx=b[0]-a[0],dy=b[1]-a[1],length2=dx*dx+dy*dy,cuts=[0,1];
+    for(const p of planVertices) {
+      const x=p[0]-a[0],y=p[1]-a[1],t=(x*dx+y*dy)/length2;
+      if(t>EPS&&t<1-EPS&&Math.abs(x*dy-y*dx)<EPS)cuts.push(t);
+    }
+    const ticks=[...new Set(cuts.map(t=>Math.round(t*1e8)/1e8))].sort((a,b)=>a-b);
+    for(let i=0;i<ticks.length-1;i++) {
+      const t0=ticks[i],t1=ticks[i+1];if(t1-t0<EPS)continue;
+      const p=mix(a,b,t0),q=mix(a,b,t1),k=edgeKey(p.slice(0,2),q.slice(0,2));
       if(!sides.has(k))sides.set(k,[]);
-      sides.get(k).push({a,b});
+      sides.get(k).push({a:p,b:q,low:[low[0]+(low[1]-low[0])*t0,low[0]+(low[1]-low[0])*t1]});
     }
   }
   for(const pair of sides.values()) {
     for(let side=0;side<pair.length;side++) {
-      const {a,b}=pair[side],other=pair[1-side];
-      const lo=other?[other.b[2],other.a[2]]:[0,0];
-      const delta=[a[2]-lo[0],b[2]-lo[1]],cuts=[0,1];
-      if(delta[0]*delta[1]<-EPS)cuts.push(delta[0]/(delta[0]-delta[1]));
-      cuts.sort((x,y)=>x-y);
+      const {a,b,low}=pair[side],other=pair[1-side],high=[a[2],b[2]];
+      const at=(line,t)=>line[0]+(line[1]-line[0])*t;
+      const curves=[low,high];
+      if(other)curves.push([other.low[1],other.low[0]],[other.b[2],other.a[2]]);
+      const cuts=[0,1];
+      // Split where lower or upper envelopes cross. Each interval has a fixed order.
+      for(let i=0;i<curves.length;i++)for(let j=i+1;j<curves.length;j++) {
+        const a=curves[i][0]-curves[j][0],b=curves[i][1]-curves[j][1];
+        if(a*b<-EPS)cuts.push(a/(a-b));
+      }
+      const ticks=[...new Set(cuts)].sort((x,y)=>x-y);
       const dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy),n=[dy/length,-dx/length,0];
-      for(let i=0;i<cuts.length-1;i++) {
-        const t0=cuts[i],t1=cuts[i+1],mid=(t0+t1)/2;
-        if(delta[0]+(delta[1]-delta[0])*mid<EPS)continue;
-        const p=mix(a,b,t0),q=mix(a,b,t1);
-        const r=[q[0],q[1],lo[0]+(lo[1]-lo[0])*t1];
-        const s=[p[0],p[1],lo[0]+(lo[1]-lo[0])*t0];
-        triangle(p,q,r,n);triangle(p,r,s,n);
+      for(let i=0;i<ticks.length-1;i++) {
+        const t0=ticks[i],t1=ticks[i+1],mid=(t0+t1)/2;
+        const min=(u,v)=>at(u,mid)<at(v,mid)?u:v,max=(u,v)=>at(u,mid)>at(v,mid)?u:v;
+        const exposed=other?[[low,min(high,curves[2])],[max(low,curves[3]),high]]:[[low,high]];
+        for(const [lo,hi] of exposed) {
+          if(at(hi,mid)-at(lo,mid)<EPS)continue;
+          const p=mix(a,b,t0),q=mix(a,b,t1);
+          p[2]=at(hi,t0);q[2]=at(hi,t1);
+          const r=[q[0],q[1],at(lo,t1)],s=[p[0],p[1],at(lo,t0)];
+          triangle(p,q,r,n);triangle(p,r,s,n);
+        }
       }
     }
   }

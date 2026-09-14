@@ -46,20 +46,21 @@ function boot() {
     setTimeout:fn=>{timers.set(++serial,fn);return serial;},clearTimeout:id=>timers.delete(id),
     requestAnimationFrame:fn=>frames.push(fn)});
   const scripts=[...html.matchAll(/<script defer src="([^"]+)"><\/script>/g)].map(m=>m[1]);
-  assert.equal(scripts.join(","),"src/geometry.js,src/polyhedra.js,src/renderer.js,src/app.js");
+  assert.equal(scripts.join(","),"src/geometry.js,src/polyhedra.js,src/worksheets.js,src/renderer.js,src/app.js");
   vm.runInContext(read(scripts[0]),context);
   vm.runInContext(read(scripts[1]),context);
+  vm.runInContext(read(scripts[2]),context);
   const G=context.TriView.Geometry,make=G.makeQuestion;
   // Deterministic generated questions, observed without changing production code.
   let seed=310;
-  G.makeQuestion=(previous,number)=>{
-    q=make(previous,number,()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;});
+  G.makeQuestion=(previous,number,unused,selectedKind)=>{
+    q=make(previous,number,()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;},selectedKind);
     return q;
   };
-  vm.runInContext(read(scripts[2]),context);
+  vm.runInContext(read(scripts[3]),context);
   const Base=context.TriView.Renderer;
   context.TriView.Renderer=class extends Base{constructor(...args){super(...args);renderer=this;}};
-  vm.runInContext(read(scripts[3]),context);
+  vm.runInContext(read(scripts[4]),context);
   assert.equal(errors.length,0,errors.join("\n"));
   return {elements,buttons,context,errors,get q(){return q;},get renderer(){return renderer;},
     click:id=>elements[id].emit("click"),
@@ -138,11 +139,40 @@ test("3D reference rasterizes and camera responds to pointer and keyboard input"
 
 test("interface, feedback and accessibility strings contain no Chinese text",()=>{
   const h=boot();
-  const sources=["index.html","src/app.js","src/geometry.js","src/polyhedra.js","src/renderer.js"];
+  const sources=["index.html","src/app.js","src/geometry.js","src/polyhedra.js","src/worksheets.js","src/renderer.js"];
   for(const file of sources)assert.ok(!/[\u3400-\u9fff]/u.test(read(file)),file);
   assert.ok(read("index.html").includes('lang="en"'));
   h.click("check");
   assert.ok(h.elements.status.textContent.startsWith("Not quite:"));
   h.click("reset");
   assert.ok(h.elements.status.textContent.startsWith("Same exercise."));
+});
+
+test("model picker switches exercises and keeps a selected reference after success",()=>{
+  const h=boot();
+  h.elements.modelFamily.value="35";
+  h.elements.modelFamily.emit("change");
+  const q=h.q;
+  assert.equal(q.model.reference,"B3");
+  assert.equal(h.elements.modelName.textContent,q.model.name);
+  q.ink=q.missing.map(list=>list.slice());
+  h.click("check");
+  assert.equal(q.state,"success");
+  h.flushTimers();
+  assert.notEqual(h.q,q);
+  assert.equal(h.q.model.reference,"B3");
+  assert.equal(h.elements.modelDetails.open,false);
+});
+test("changing the model clears an old success timer and returns error state to drawing",()=>{
+  const h=boot();
+  h.click("check");
+  assert.equal(h.q.state,"error");
+  h.elements.modelFamily.value="30";h.elements.modelFamily.emit("change");
+  assert.equal(h.q.state,"drawing");
+  h.q.ink=h.q.missing.map(list=>list.slice());h.click("check");
+  h.elements.modelFamily.value="48";h.elements.modelFamily.emit("change");
+  const selected=h.q;
+  h.flushTimers();
+  assert.equal(h.q,selected);
+  assert.equal(selected.model.kind,48);
 });

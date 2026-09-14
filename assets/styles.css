@@ -6,3 +6,10 @@
 /* Keep the longer English labels readable on narrow screens. */
 .guide{min-width:0}.exercise-heading{flex-wrap:wrap}.brand-caption{letter-spacing:0}.model-tools{text-align:center}
 @media(max-width:700px){.views{grid-template-rows:auto auto auto}.guide{grid-area:3/1/4/3;padding:22px}.guide h2{font-size:16px}.guide p,.guide li{font-size:12px}.guide .small,.legend{display:flex}.model-tools{gap:4px}.toolbar{row-gap:10px}.actions{flex-wrap:wrap}}
+
+.model-picker{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:0 25px 18px}
+.model-picker label{font-size:12px;font-weight:600}
+.model-picker select{font:inherit;font-size:12px;max-width:100%;width:295px;min-height:38px;padding:8px 30px 8px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:#34445a}
+.model-picker span{font-size:11px;color:var(--muted)}
+.model-name{text-align:center;font-size:13px;font-weight:600;color:#34445a;margin:0 0 12px}
+@media(max-width:700px){.model-picker{padding:0 14px 16px;gap:8px}.model-picker select{width:100%}.model-picker span{font-size:10px}}

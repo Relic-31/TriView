@@ -44,6 +44,7 @@ function mirrored(loop,w) {
 
 /** Five extruded profiles; nested holes in two depth layers form counterbores. */
 function makeModel(kind,random=Math.random) {
+  if(kind>=25) return root.TriView.Worksheets.makeModel(kind,random);
   if(kind>=5) return root.TriView.Polyhedra.makeModel(kind,random);
   const pick=n=>Math.floor(random()*n), W=8,H=6,D=3+pick(3);
   let outer,small,big;
@@ -302,10 +303,16 @@ function shuffle(list,random=Math.random) {
   for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
-function makeQuestion(previousKind=-1,number=0,random=Math.random) {
-  const familyCount=5+root.TriView.Polyhedra.names.length;
-  const kind=previousKind<0?13+Math.floor(random()*(familyCount-13)):(previousKind+1+Math.floor(random()*(familyCount-1)))%familyCount;
+function familyNames() {
+  return ["Chamfered twin bores","Arched bore","Semicircular groove","Stepped bore","Rounded capsule bore",
+    ...root.TriView.Polyhedra.names,...root.TriView.Worksheets.names];
+}
+function makeQuestion(previousKind=-1,number=0,random=Math.random,selectedKind=null) {
+  const names=familyNames(),familyCount=names.length;
+  const locked=Number.isInteger(selectedKind)&&selectedKind>=0&&selectedKind<familyCount;
+  const kind=locked?selectedKind:previousKind<0?25+Math.floor(random()*16):(previousKind+1+Math.floor(random()*(familyCount-1)))%familyCount;
   const model=makeModel(kind,random),full=[0,1,2].map(v=>projection(model,v));
+  model.name=names[kind];
   const candidates=shuffle(full.flatMap((list,v)=>list.filter(e=>!e.protect&&curveLength(e)>.5&&
     (e.k!=="line"||[...e.a,...e.b].every(n=>Math.abs(n*4-Math.round(n*4))<.001))).map(e=>({e,v}))),random);
   if(!candidates.length) throw new Error("No suitable missing lines were found. Please refresh to try again.");
@@ -320,5 +327,5 @@ function makeQuestion(previousKind=-1,number=0,random=Math.random) {
 }
 root.TriView=root.TriView||{};
 root.TriView.Geometry={PI,TAU,EPS,ln,ar,pt,onArc,round,mod,poly,circle,capsule,rounded,
-  flatten,generators,makeModel,projection,mergeLines,curveLength,sample,distance,grade,meshModel,makeQuestion};
+  flatten,generators,familyNames,makeModel,projection,mergeLines,curveLength,sample,distance,grade,meshModel,makeQuestion};
 })(globalThis);
