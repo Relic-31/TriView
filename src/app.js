@@ -4,8 +4,8 @@
 function start() {
   const $=id=>document.getElementById(id);
   try {
-    if(!globalThis.TriView?.Geometry||!globalThis.TriView?.Renderer)
-      throw new Error("程序文件未完整加载，请保留 src 文件夹并重新打开。");
+    if(!globalThis.TriView?.Geometry||!globalThis.TriView?.Polyhedra||!globalThis.TriView?.Renderer)
+      throw new Error("Some app files did not load. Keep the src folder intact and reload the page.");
     const {PI,TAU,EPS,ln,ar,pt,round,mod,distance,grade,makeQuestion}=TriView.Geometry;
     const svgs=[0,1,2].map(v=>$("view"+v));
     const SCALE=30,OX=60,OY=55,sx=x=>OX+x*SCALE,sy=y=>OY+y*SCALE;
@@ -14,7 +14,7 @@ function start() {
     let cursors=[[0,0],[0,0],[0,0]];
     function message(text,kind=""){$("status").textContent=text;$("status").className=kind;}
     const renderer=new TriView.Renderer($("model"),$("modelDetails"),()=>{
-      message("当前环境不支持立体画布，请在浏览器中打开完整项目。");
+      message("This browser cannot display the 3D canvas. Try a modern browser.");
     });
     function shapeSVG(e,color,width=2,opacity=1) {
       const attrs='fill="none" stroke="'+color+'" stroke-width="'+width+'" opacity="'+opacity+'"'+
@@ -39,7 +39,7 @@ function start() {
       if(selected.length<3) return null;
       const end=selected[2],radius2=Math.hypot(end[0]-center[0],end[1]-center[1]);
       if(Math.abs(radius-radius2)>.12) {
-        if(!preview) message("圆弧的起点和终点需要位于同一圆周上。");
+        if(!preview) message("The arc start and end must be on the same circle.");
         return null;
       }
       const a=Math.atan2(first[1]-center[1],first[0]-center[0]),b=Math.atan2(end[1]-center[1],end[0]-center[0]);
@@ -80,14 +80,14 @@ function start() {
         }
         if(q.state==="drawing"&&hover?.v===v) html+='<circle cx="'+sx(hover.p[0])+'" cy="'+sy(hover.p[1])+
           '" r="3.5" fill="'+(tool==="erase"?"#d43845":"#245bea")+'" opacity=".6"/>';
-        const note=hover?.v===v?"坐标 "+hover.p.map(round).join(" , "):"各视图使用相同比例";
+        const note=hover?.v===v?"Position "+hover.p.map(round).join(" , "):"All views use the same scale";
         html+='<text x="180" y="273" text-anchor="middle" fill="#8190a5" font-size="10">'+note+'</text>';
         svgs[v].innerHTML=html;
       }
       $("undo").disabled=q.state!=="drawing"||!q.history.length;
       $("check").disabled=q.state!=="drawing";
       $("reset").disabled=q.state==="success";
-      $("reset").textContent=q.state==="error"?"重新做":"清空补线";
+      $("reset").textContent=q.state==="error"?"Try again":"Clear lines";
       document.querySelectorAll("[data-tool],[data-shape]").forEach(b=>b.disabled=q.state!=="drawing");
       $("arcDirection").disabled=q.state!=="drawing";
     }
@@ -105,15 +105,15 @@ function start() {
     function commit(v,e) {
       if(q.state!=="drawing") return;
       saveHistory();q.ink[v].push(e);cancel();
-      message("已添加补线，可以继续绘制或检查答案。");render();
+      message("Line added. Continue drawing or check your answer.");render();
     }
     function choose(v,p) {
       if(q.state!=="drawing") return;
       if(tool==="erase") {
         let index=-1;
         for(let i=q.ink[v].length-1;i>=0;i--) if(distance(p,q.ink[v][i])<.24){index=i;break;}
-        if(index>=0){saveHistory();q.ink[v].splice(index,1);message("已擦除这条补线。");}
-        else message("请点击自己画的线，题目原线不能擦除。");
+        if(index>=0){saveHistory();q.ink[v].splice(index,1);message("Your stroke was erased.");}
+        else message("Click one of your own strokes. Original lines cannot be erased.");
         render();return;
       }
       if(active!==v){cancel();active=v;}
@@ -124,10 +124,10 @@ function start() {
         if(stroke) commit(v,stroke);
         else {
           points.pop();
-          message(shape==="arc"?"请选择同一圆周上的终点；同一点不能构成圆弧。":"请选择与起点不同的位置。");
+          message(shape==="arc"?"Choose a different endpoint on the same circle.":"Choose a point different from the start.");
         }
-      } else message(shape==="line"?"请选择终点。":points.length===1
-        ?"已选圆心，请选择圆上一点。":"已选圆弧起点，请选择终点；注意顺时针或逆时针方向。");
+      } else message(shape==="line"?"Choose the endpoint.":points.length===1
+        ?"Center selected. Choose a point on the circle.":"Arc start selected. Choose the endpoint and check the direction.");
       render();
     }
     function eventPoint(svg,event,snap=true) {
@@ -193,28 +193,28 @@ function start() {
     }));
     $("arcDirection").addEventListener("click",()=>{
       if(q.state!=="drawing")return;
-      clockwise=!clockwise;$("arcDirection").textContent=clockwise?"顺时针 ↻":"逆时针 ↺";render();
+      clockwise=!clockwise;$("arcDirection").textContent=clockwise?"Clockwise ↻":"Counterclockwise ↺";render();
     });
     function undo() {
       if(q.state!=="drawing"||!q.history.length)return;
-      q.ink=q.history.pop();cancel();message("已撤销。");render();
+      q.ink=q.history.pop();cancel();message("Undone.");render();
     }
     $("undo").addEventListener("click",undo);
     $("reset").addEventListener("click",()=>{
       if(q.state==="success")return;
       q.ink=[[],[],[]];q.history=[];q.state="drawing";q.result=null;cancel();
-      message("仍是同一道题，请重新补线。");render();
+      message("Same exercise. Try drawing the missing lines again.");render();
     });
     $("check").addEventListener("click",()=>{
       if(q.state!=="drawing")return;
       cancel();q.result=grade(q.full,q.missing,q.ink);
       if(q.result.ok) {
         q.state="success";$("solved").textContent=++completed;
-        message("回答正确！正在生成下一题……","success");nextTimer=setTimeout(newQuestion,1400);
+        message("Correct! Loading the next exercise...","success");nextTimer=setTimeout(newQuestion,1400);
       } else {
         q.state="error";const reasons=[];
-        if(q.result.absent)reasons.push("还有缺线");if(q.result.wrong)reasons.push("线型不正确");if(q.result.extra)reasons.push("存在多余线条");
-        message("未通过："+reasons.join("、")+"。点击“重新做”重试。","error");
+        if(q.result.absent)reasons.push("some lines are still missing");if(q.result.wrong)reasons.push("incorrect line type");if(q.result.extra)reasons.push("extra lines");
+        message("Not quite: "+reasons.join(", ")+". Click Try again to retry.","error");
       }
       render();
     });
@@ -229,16 +229,16 @@ function start() {
     function newQuestion() {
       clearTimeout(nextTimer);q=makeQuestion(previousKind,number);previousKind=q.model.kind;number++;
       cancel();hover=null;cursors=[[0,0],[0,0],[0,0]];
-      $("questionNo").textContent="练习 "+String(number).padStart(2,"0");
-      $("missingLabel").textContent="缺少 "+q.count+" 处线条";
+      $("questionNo").textContent="Exercise "+String(number).padStart(2,"0");
+      $("missingLabel").textContent="Missing: "+q.count+" line(s)";
       $("modelDetails").open=false;renderer.setQuestion(q);chooseTool("solid");
-      message("外轮廓完整，请补内部棱线、孔口线或遮挡虚线。");render();
+      message("Outlines are complete. Restore the missing internal edges or hidden lines.");render();
     }
     newQuestion();
   } catch(error) {
     console.error(error);
     const status=$("status");
-    if(status){status.className="error";status.textContent="初始化失败："+error.message;}
+    if(status){status.className="error";status.textContent="Unable to start: "+error.message;}
   }
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});

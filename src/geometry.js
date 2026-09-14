@@ -44,6 +44,7 @@ function mirrored(loop,w) {
 
 /** Five extruded profiles; nested holes in two depth layers form counterbores. */
 function makeModel(kind,random=Math.random) {
+  if(kind>=5) return root.TriView.Polyhedra.makeModel(kind,random);
   const pick=n=>Math.floor(random()*n), W=8,H=6,D=3+pick(3);
   let outer,small,big;
   const c=.5+.5*pick(3),r=.75+.25*pick(2);
@@ -175,6 +176,7 @@ function mergeLines(raw) {
   return out;
 }
 function projection(m,v) {
+  if(m.planar) return root.TriView.Polyhedra.projection(m,v);
   const lines=[],arcs=new Map();
   function addLine(a3,b3,outer) {
     const a=project(m,a3,v),b=project(m,b3,v);
@@ -253,6 +255,7 @@ function grade(full,missing,ink) {
 
 /** Scanline-triangulated caps respect holes; curved walls use polygonal approximation. */
 function meshModel(m) {
+  if(m.planar) return m.mesh;
   const tris=[],borders=[],sweeps=[];
   function tri(a,b,c,n){tris.push({p:[a,b,c],n});}
   function cap(loops,y,normal) {
@@ -300,10 +303,11 @@ function shuffle(list,random=Math.random) {
   return a;
 }
 function makeQuestion(previousKind=-1,number=0,random=Math.random) {
-  const kind=previousKind<0?0:(previousKind+1+Math.floor(random()*4))%5;
+  const kind=previousKind<0?5:(previousKind+1+Math.floor(random()*12))%13;
   const model=makeModel(kind,random),full=[0,1,2].map(v=>projection(model,v));
-  const candidates=shuffle(full.flatMap((list,v)=>list.filter(e=>!e.protect&&curveLength(e)>.5).map(e=>({e,v}))),random);
-  if(!candidates.length) throw new Error("没有找到可用缺线，请刷新重试。");
+  const candidates=shuffle(full.flatMap((list,v)=>list.filter(e=>!e.protect&&curveLength(e)>.5&&
+    (e.k!=="line"||[...e.a,...e.b].every(n=>Math.abs(n*4-Math.round(n*4))<.001))).map(e=>({e,v}))),random);
+  if(!candidates.length) throw new Error("No suitable missing lines were found. Please refresh to try again.");
   const count=Math.min(candidates.length,1+Math.floor(random()*2));
   const first=number%3!==2?candidates.find(t=>t.e.k==="arc")||candidates[0]:candidates[0];
   const chosen=[first];

@@ -46,8 +46,9 @@ function boot() {
     setTimeout:fn=>{timers.set(++serial,fn);return serial;},clearTimeout:id=>timers.delete(id),
     requestAnimationFrame:fn=>frames.push(fn)});
   const scripts=[...html.matchAll(/<script defer src="([^"]+)"><\/script>/g)].map(m=>m[1]);
-  assert.equal(scripts.join(","),"src/geometry.js,src/renderer.js,src/app.js");
+  assert.equal(scripts.join(","),"src/geometry.js,src/polyhedra.js,src/renderer.js,src/app.js");
   vm.runInContext(read(scripts[0]),context);
+  vm.runInContext(read(scripts[1]),context);
   const G=context.TriView.Geometry,make=G.makeQuestion;
   // Deterministic generated questions, observed without changing production code.
   let seed=310;
@@ -55,10 +56,10 @@ function boot() {
     q=make(previous,number,()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;});
     return q;
   };
-  vm.runInContext(read(scripts[1]),context);
+  vm.runInContext(read(scripts[2]),context);
   const Base=context.TriView.Renderer;
   context.TriView.Renderer=class extends Base{constructor(...args){super(...args);renderer=this;}};
-  vm.runInContext(read(scripts[2]),context);
+  vm.runInContext(read(scripts[3]),context);
   assert.equal(errors.length,0,errors.join("\n"));
   return {elements,buttons,context,errors,get q(){return q;},get renderer(){return renderer;},
     click:id=>elements[id].emit("click"),
@@ -133,4 +134,15 @@ test("3D reference rasterizes and camera responds to pointer and keyboard input"
   h.tool("camera","front");
   assert.equal(h.renderer.yaw,0);
   assert.equal(h.renderer.elevation,0);
+});
+
+test("interface, feedback and accessibility strings contain no Chinese text",()=>{
+  const h=boot();
+  const sources=["index.html","src/app.js","src/geometry.js","src/polyhedra.js","src/renderer.js"];
+  for(const file of sources)assert.ok(!/[\u3400-\u9fff]/u.test(read(file)),file);
+  assert.ok(read("index.html").includes('lang="en"'));
+  h.click("check");
+  assert.ok(h.elements.status.textContent.startsWith("Not quite:"));
+  h.click("reset");
+  assert.ok(h.elements.status.textContent.startsWith("Same exercise."));
 });

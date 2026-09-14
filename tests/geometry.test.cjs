@@ -5,6 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const context = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/geometry.js"), "utf8"), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, "../src/polyhedra.js"), "utf8"), context);
 const G = context.TriView.Geometry;
 const empty = () => [[], [], []];
 function rng(seed) { return () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; }; }
@@ -48,7 +49,7 @@ test("100 seeded questions preserve silhouettes and accept the complete answer",
     assert.equal(G.grade(q.full, q.missing, empty()).ok, false);
     assert.ok(q.mesh.tris.flatMap(t => [...t.p.flat(), ...t.n]).every(Number.isFinite));
   }
-  assert.equal(seen.size, 5);
+  assert.equal(seen.size, 13);
 });
 test("grading accepts split lines and reverse drawing direction", () => {
   const line = {...G.ln([0,0],[4,0]),type:"dash"};
@@ -82,4 +83,54 @@ test("rounded profile mesh leaves the capsule opening out of the front cap", () 
     const dx=Math.max(0,Math.abs(x-4)-1);
     return dx*dx+(z-3)*(z-3)<.98*.98;
   }));
+});
+
+function rectangleCells(x0,y0,x1,y1,height) {
+  const a=[x0,y0,height(x0,y0)],b=[x1,y0,height(x1,y0)];
+  const c=[x1,y1,height(x1,y1)],d=[x0,y1,height(x0,y1)];
+  return [[a,b,c],[a,c,d]];
+}
+test("planar wedge has a trapezoidal side, no triangle seams and the correct volume",()=>{
+  const m=context.TriView.Polyhedra.fromCells(rectangleCells(0,0,4,4,(x,y)=>1+y));
+  const side=G.projection(m,1),top=G.projection(m,2),front=G.projection(m,0);
+  assert.equal(side.length,4);
+  assert.ok(side.every(e=>e.type==="solid"&&e.protect));
+  assert.ok(side.some(e=>Math.abs(e.a[0]-e.b[0])>3.9&&Math.abs(e.a[1]-e.b[1])>3.9));
+  assert.equal(top.length,4);
+  assert.ok(top.every(e=>e.protect));
+  assert.equal(front.length,5);
+  assert.equal(front.filter(e=>!e.protect&&e.type==="solid").length,1);
+  const volume=m.mesh.tris.reduce((sum,{p:[a,b,c]})=>sum+
+    (a[0]*(b[1]*c[2]-b[2]*c[1])+a[1]*(b[2]*c[0]-b[0]*c[2])+a[2]*(b[0]*c[1]-b[1]*c[0]))/6,0);
+  assert.ok(Math.abs(volume-48)<1e-6,"wedge volume "+volume);
+});
+test("a front terrace is visible; the same terrace behind a taller block is dashed",()=>{
+  const cells=[...rectangleCells(0,0,4,2,()=>1),...rectangleCells(0,2,4,4,()=>3)];
+  const front=context.TriView.Polyhedra.fromCells(cells);
+  const back=context.TriView.Polyhedra.fromCells(cells.map(t=>t.map(([x,y,z])=>[x,4-y,z]).reverse()));
+  const edge=m=>G.projection(m,0).find(e=>Math.abs(e.a[1]-2)<1e-6&&Math.abs(e.b[1]-2)<1e-6);
+  assert.equal(edge(front).type,"solid");
+  assert.equal(edge(back).type,"dash");
+  assert.equal(edge(front).protect,false);
+  assert.equal(edge(back).protect,false);
+});
+test("irregular plan cuts retain their diagonal silhouette",()=>{
+  for(const kind of [7,11]) {
+    const m=G.makeModel(kind,()=>.8);
+    const top=G.projection(m,2);
+    const diagonals=top.filter(e=>Math.abs(e.a[0]-e.b[0])>.1&&Math.abs(e.a[1]-e.b[1])>.1);
+    assert.ok(diagonals.length>0);
+    assert.ok(diagonals.every(e=>e.protect&&e.type==="solid"));
+  }
+});
+test("all planar families have positive material and drawable missing lines",()=>{
+  const random=rng(42131);
+  for(let kind=5;kind<13;kind++)for(let variant=0;variant<12;variant++) {
+    const m=G.makeModel(kind,random);
+    assert.ok(m.mesh.tris.flatMap(t=>t.p).every(p=>p[2]>=-1e-6));
+    const full=[0,1,2].map(v=>G.projection(m,v));
+    const choices=full.flat().filter(e=>!e.protect&&G.curveLength(e)>.5&&
+      [...e.a,...e.b].every(n=>Math.abs(n*4-Math.round(n*4))<.001));
+    assert.ok(choices.length>0,"no drawable omissions for "+kind);
+  }
 });

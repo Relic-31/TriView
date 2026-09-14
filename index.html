@@ -1,87 +1,88 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="三视图补线练习：实线、虚线、圆弧与可旋转的立体模型。">
+  <meta name="description" content="Practice orthographic drawing. Complete missing lines on three views of sloped, chamfered and curved solids, then explore the matching 3D model.">
   <meta name="theme-color" content="#245bea">
-  <title>TriView · 三视图补线练习</title>
+  <title>TriView · Orthographic Drawing Practice</title>
   <link rel="stylesheet" href="assets/styles.css">
   <script defer src="src/geometry.js"></script>
+  <script defer src="src/polyhedra.js"></script>
   <script defer src="src/renderer.js"></script>
   <script defer src="src/app.js"></script>
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="TriView 首页"><span class="brand-icon" aria-hidden="true">▱</span> TriView<span class="brand-caption">空间思维练习室</span></a>
+      <a class="brand" href="./" aria-label="TriView home"><span class="brand-icon" aria-hidden="true">▱</span> TriView<span class="brand-caption">Spatial thinking studio</span></a>
       <a class="source" href="https://github.com/Relic-31/TriView">GitHub ↗</a>
     </header>
     <section class="intro">
-      <p class="eyebrow">观察 · 推理 · 补全</p>
-      <h1>把缺失的线，补回来。</h1>
-      <p>从三个方向理解同一个立体。在完整轮廓内，找出缺失的实线或虚线。</p>
+      <p class="eyebrow">OBSERVE · REASON · COMPLETE</p>
+      <h1>Find the missing lines.</h1>
+      <p>One solid, three views. Complete its internal edges while keeping the outline in sight.</p>
     </section>
-    <section class="workspace" aria-label="三视图练习">
+    <section class="workspace" aria-label="Orthographic drawing exercise">
       <div class="exercise-heading">
-        <div><span id="questionNo" class="question-number">练习 01</span><span id="missingLabel" class="badge">正在生成题目</span></div>
-        <span class="progress">已完成 <strong id="solved">0</strong> 题</span>
+        <div><span id="questionNo" class="question-number">Exercise 01</span><span id="missingLabel" class="badge">Generating exercise</span></div>
+        <span class="progress">Completed <strong id="solved">0</strong></span>
       </div>
       <div class="toolbar">
-        <div class="tool-group" role="group" aria-label="线型">
-          <button type="button" data-tool="solid" class="active" aria-pressed="true"><span aria-hidden="true">━</span> 实线 <kbd>1</kbd></button>
-          <button type="button" data-tool="dash" aria-pressed="false"><span aria-hidden="true">┄</span> 虚线 <kbd>2</kbd></button>
-          <button type="button" data-tool="erase" aria-pressed="false">擦除 <kbd>E</kbd></button>
+        <div class="tool-group" role="group" aria-label="Line type">
+          <button type="button" data-tool="solid" class="active" aria-pressed="true"><span aria-hidden="true">━</span> Solid <kbd>1</kbd></button>
+          <button type="button" data-tool="dash" aria-pressed="false"><span aria-hidden="true">┄</span> Dashed <kbd>2</kbd></button>
+          <button type="button" data-tool="erase" aria-pressed="false">Eraser <kbd>E</kbd></button>
         </div>
-        <div class="tool-group" role="group" aria-label="绘图形状">
-          <button type="button" data-shape="line" class="active" aria-pressed="true">直线</button>
-          <button type="button" data-shape="arc" aria-pressed="false">圆弧</button>
-          <button type="button" data-shape="circle" aria-pressed="false">整圆</button>
-          <button type="button" id="arcDirection" hidden>顺时针 ↻</button>
+        <div class="tool-group" role="group" aria-label="Drawing shape">
+          <button type="button" data-shape="line" class="active" aria-pressed="true">Line</button>
+          <button type="button" data-shape="arc" aria-pressed="false">Arc</button>
+          <button type="button" data-shape="circle" aria-pressed="false">Circle</button>
+          <button type="button" id="arcDirection" hidden>Clockwise ↻</button>
         </div>
-        <button type="button" id="undo" class="quiet" disabled>撤销</button>
+        <button type="button" id="undo" class="quiet" disabled>Undo</button>
       </div>
       <div class="views">
         <section class="view-card front">
-          <h2>主视图 <span>从前向后看</span></h2>
-          <svg id="view0" viewBox="0 0 360 290" tabindex="0" role="application" aria-label="主视图补线画布" aria-describedby="drawingHelp"></svg>
+          <h2>Front view <span>Looking from the front</span></h2>
+          <svg id="view0" viewBox="0 0 360 290" tabindex="0" role="application" aria-label="Front view drawing canvas" aria-describedby="drawingHelp"></svg>
         </section>
         <section class="view-card left">
-          <h2>左视图 <span>从左向右看</span></h2>
-          <svg id="view1" viewBox="0 0 360 290" tabindex="0" role="application" aria-label="左视图补线画布" aria-describedby="drawingHelp"></svg>
+          <h2>Left view <span>Looking from the left</span></h2>
+          <svg id="view1" viewBox="0 0 360 290" tabindex="0" role="application" aria-label="Left view drawing canvas" aria-describedby="drawingHelp"></svg>
         </section>
         <section class="view-card top">
-          <h2>俯视图 <span>从上向下看</span></h2>
-          <svg id="view2" viewBox="0 0 360 290" tabindex="0" role="application" aria-label="俯视图补线画布" aria-describedby="drawingHelp"></svg>
+          <h2>Top view <span>Looking from above</span></h2>
+          <svg id="view2" viewBox="0 0 360 290" tabindex="0" role="application" aria-label="Top view drawing canvas" aria-describedby="drawingHelp"></svg>
         </section>
         <aside class="guide">
-          <p class="eyebrow">绘图提示</p>
-          <h2>长对正，高平齐，宽相等。</h2>
-          <p>采用第一角投影：俯视图在主视图下方，左视图在右侧。</p>
+          <p class="eyebrow">DRAWING TIPS</p>
+          <h2>Match width, height and depth.</h2>
+          <p>First-angle projection: the top view sits below the front; the left view sits to its right.</p>
           <ol id="drawingHelp">
-            <li>选择实线或虚线，再选直线、圆弧或整圆。</li>
-            <li>直线点选两端；整圆点选圆心、圆上一点；圆弧点选圆心、起点、终点。</li>
-            <li>完成后检查答案。答错请重做，答对自动进入下一题。</li>
+            <li>Choose solid or dashed, then a line, arc or circle.</li>
+            <li>Line: start → end. Circle: center → rim. Arc: center → start → end.</li>
+            <li>Check your answer. Retry an incorrect exercise; a correct answer opens the next one.</li>
           </ol>
-          <p class="small">网格间距 0.5，吸附步长 0.25。直线和整圆也支持拖动绘制。</p>
-          <div class="legend"><span><i class="original"></i>原有线</span><span><i class="answer"></i>你的补线</span></div>
+          <p class="small">Grid: 0.5 units. Snap: 0.25 units. You can also drag to draw lines and circles.</p>
+          <div class="legend"><span><i class="original"></i>Original</span><span><i class="answer"></i>Your answer</span></div>
         </aside>
       </div>
       <div class="exercise-footer">
-        <p id="status" role="status" aria-live="polite">正在加载练习……如果一直停留在这里，请检查 src 文件夹是否完整，并在浏览器中打开 index.html。</p>
-        <div class="actions"><button type="button" id="reset">清空补线</button><button type="button" id="check" class="primary">检查答案 →</button></div>
+        <p id="status" role="status" aria-live="polite">Loading exercise... If this message remains, reload the page or check that the src folder is complete.</p>
+        <div class="actions"><button type="button" id="reset">Clear lines</button><button type="button" id="check" class="primary">Check answer →</button></div>
       </div>
     </section>
     <details id="modelDetails" class="model-panel">
-      <summary><span>查看隐藏的立体图形</span><span class="small">遇到困难时，换个角度观察</span></summary>
+      <summary><span>Reveal the 3D model</span><span class="small">Need a hint? Try another angle.</span></summary>
       <div class="model-content">
-        <canvas id="model" width="600" height="380" tabindex="0" aria-label="立体模型；拖动或按方向键旋转，滚轮缩放">当前浏览器不支持 Canvas，请使用现代浏览器。</canvas>
-        <div class="model-tools"><p>拖动旋转 · 滚轮缩放 · 方向键旋转</p><div class="tool-group" role="group" aria-label="立体模型观察角度"><button type="button" data-camera="iso">复位</button><button type="button" data-camera="front">正面</button><button type="button" data-camera="left">左侧</button><button type="button" data-camera="top">顶部</button></div></div>
+        <canvas id="model" width="600" height="380" tabindex="0" aria-label="3D model: drag or use arrow keys to rotate; scroll to zoom">Your browser does not support Canvas. Please use a modern browser.</canvas>
+        <div class="model-tools"><p>Drag to rotate · Scroll to zoom · Arrow keys to rotate</p><div class="tool-group" role="group" aria-label="3D camera presets"><button type="button" data-camera="iso">Reset view</button><button type="button" data-camera="front">Front</button><button type="button" data-camera="left">Left</button><button type="button" data-camera="top">Top</button></div></div>
       </div>
     </details>
-    <footer class="page-footer"><span>TriView · 在二维里，练习三维思考</span><span>快捷键：Esc 取消选点 · Ctrl / ⌘ + Z 撤销</span></footer>
-    <p class="accessibility-note">键盘绘图：Tab 聚焦视图，方向键移动光标，Shift + 方向键跨一格，Enter 或空格选点。图形信息仍需视觉观察。</p>
-    <noscript><p class="noscript">请启用 JavaScript 后使用三视图练习。</p></noscript>
+    <footer class="page-footer"><span>TriView · Think in 3D, draw in 2D.</span><span>Esc: cancel points · Ctrl / ⌘ + Z: undo</span></footer>
+    <p class="accessibility-note">Keyboard drawing: Tab to a view, move with arrow keys, hold Shift for larger steps, then press Enter or Space to select a point. Visual interpretation of the drawings is required.</p>
+    <noscript><p class="noscript">Please enable JavaScript to use TriView.</p></noscript>
   </main>
 </body>
 </html>

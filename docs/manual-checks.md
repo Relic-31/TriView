@@ -6,6 +6,7 @@ These are manual checks to perform before a release, not a claim that every list
 
 - Download the repository ZIP and extract it; open `index.html` with the adjacent `assets` and `src` folders intact.
 - Repeat through a local HTTP server and GitHub Pages if enabled.
+- Confirm all interface text, tooltips, keyboard labels and status messages are in English.
 - Confirm all three drawings appear without console errors, the model is initially collapsed, and no remote library requests are needed.
 - Check desktop Chrome/Edge, Firefox and Safari, plus mobile Safari/Chrome.
 - At narrow widths, check that all controls remain usable, there is no horizontal page overflow, and the front/left/top placement stays consistent.
@@ -20,7 +21,7 @@ These are manual checks to perform before a release, not a claim that every list
 - Submit an empty answer, a wrong line type and an extra line. Each should fail and offer retry on the same question.
 - Retry should clear user strokes and preserve the model and omissions.
 - Complete an answer accurately: correct feedback appears, the completed count increments once, then a new question appears after about 1.4 seconds.
-- Verify protected outer outlines remain present for all five profile families.
+- Verify protected outer outlines remain present for all 13 solid families.
 
 ## Pointer and keyboard behavior
 
