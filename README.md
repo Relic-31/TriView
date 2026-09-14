@@ -17,15 +17,15 @@ The interface is currently in Chinese. See [the French guide](docs/README.fr.md)
 
 ## Run
 
-Download the repository using **Code → Download ZIP**, extract it, and open \`index.html\` in a modern browser.
+Download the repository using **Code → Download ZIP**, extract it, and open `index.html` in a modern browser.
 
-No installation, build step, backend, account, or CDN is required. Keep the \`src\` and \`assets\` folders beside \`index.html\`.
+No installation, build step, backend, account, or CDN is required. Keep the `src` and `assets` folders beside `index.html`.
 
 Alternatively, serve the repository with a static HTTP server:
 
-\`\`\`sh
+```sh
 python3 -m http.server 8000
-\`\`\`
+```
 
 Then open http://localhost:8000.
 
@@ -41,32 +41,33 @@ Then open http://localhost:8000.
 
 The grid shows half-unit intervals and snaps to quarter units. These are exercise coordinates, not physical measurements.
 
-Keyboard shortcuts: \`1\` solid, \`2\` dashed, \`E\` eraser, \`Esc\` cancel selection, \`Ctrl/Cmd+Z\` undo. Focus a drawing view and use arrow keys to move the cursor, then Space or Enter to select a point.
+Keyboard shortcuts: `1` solid, `2` dashed, `E` eraser, `Esc` cancel selection, `Ctrl/Cmd+Z` undo. Focus a drawing view and use arrow keys to move the cursor, then Space or Enter to select a point.
 
 ## Project structure
 
 | Path | Purpose |
 | --- | --- |
-| \`index.html\` | Complete page and accessible controls |
-| \`assets/styles.css\` | Layout and responsive styling |
-| \`src/geometry.js\` | Solids, orthographic projection, visibility, grading, mesh generation |
-| \`src/renderer.js\` | Canvas 3D renderer and camera controls |
-| \`src/app.js\` | Exercises, SVG drawing, input, feedback, progression |
-| \`tests/geometry.test.cjs\` | Geometry and grading regression tests |
-| \`docs/manual-checks.md\` | Browser acceptance checklist |
-| \`docs/README.fr.md\` | French usage guide |
+| `index.html` | Complete page and accessible controls |
+| `assets/styles.css` | Layout and responsive styling |
+| `src/geometry.js` | Solids, orthographic projection, visibility, grading, mesh generation |
+| `src/renderer.js` | Canvas 3D renderer and camera controls |
+| `src/app.js` | Exercises, SVG drawing, input, feedback, progression |
+| `tests/geometry.test.cjs` | Geometry and grading regression tests |
+| `tests/app.test.cjs` | Simulated DOM and interaction regression tests |
+| `docs/manual-checks.md` | Browser acceptance checklist |
+| `docs/README.fr.md` | French usage guide |
 
-Scripts use a small \`TriView\` namespace and load in order with \`defer\`, so the app also works directly from a local file.
+Scripts use a small `TriView` namespace and load in order with `defer`, so the app also works directly from a local file.
 
 ## Tests
 
 Node.js 20 or newer is sufficient; there are no npm dependencies.
 
-\`\`\`sh
+```sh
 npm test
-\`\`\`
+```
 
-These tests check geometry, silhouette preservation, grading, and mesh construction. They do not replace real-browser testing of rendering, mouse/touch input, or accessibility. The browser checklist records what to verify, not a claim that those checks have passed.
+These tests check geometry, silhouette preservation, grading, mesh construction, and application state transitions in a simulated DOM. GitHub Actions runs them on pushes and pull requests. They do not replace real-browser testing of rendering, mouse/touch input, or accessibility. The browser checklist records what to verify, not a claim that those checks have passed.
 
 ## Publish with GitHub Pages
 
@@ -98,7 +99,7 @@ TriView 是一个工程制图练习网页。程序先生成立体模型，再显
 
 遇到困难时，可以展开隐藏的立体模型并旋转观察。当前模型包含切角、圆弧面、半圆槽、阶梯、圆孔、长圆孔和沉孔。
 
-下载并解压整个项目，直接打开 \`index.html\` 即可。项目仍处于教学原型阶段，投影细节和浏览器兼容性欢迎反馈与改进。
+下载并解压整个项目，直接打开 `index.html` 即可。项目仍处于教学原型阶段，投影细节和浏览器兼容性欢迎反馈与改进。
 
 ## License
 
