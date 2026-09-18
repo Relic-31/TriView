@@ -33,6 +33,8 @@ These are manual checks to perform before a release, not a claim that every list
 ## 3D reference
 
 - Expand the model, rotate by drag and arrow keys, zoom with the wheel, and try the preset views.
+- Start from Front: drag right and left with a mouse, then with touch. The front surface should move in the same horizontal direction as the pointer. Repeat from the isometric view.
+- From Front, check that Left/Right arrow keys rotate in the same screen direction as dragging. Check vertical drag and Up/Down keys separately.
 - Confirm holes stay open and curved walls remain joined while rotating.
 - Hide/show the model and solve a question while it is open. The next question must hide and reset it.
 - Compare the model's front/left/top presets with the corresponding two-dimensional views.

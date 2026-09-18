@@ -1,6 +1,6 @@
 {
   "name": "triview",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Interactive orthographic missing-line practice with a rotatable 3D model",
   "scripts": {

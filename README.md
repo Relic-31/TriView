@@ -29,4 +29,4 @@ Plain HTML, CSS and JavaScript, with no runtime dependencies. Open `index.html` 
 
 This is a teaching prototype, not a general CAD engine. Curved visibility is approximated; grading uses a geometric tolerance. See [contributing](CONTRIBUTING.md) and [browser checks](docs/manual-checks.md).
 
-[MIT License](LICENSE) · Relic-31
+[Changelog](CHANGELOG.md) · [Release and rollback](docs/releases.md) · [MIT License](LICENSE) · Relic-31

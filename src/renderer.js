@@ -102,7 +102,8 @@ class Renderer {
     });
     canvas.addEventListener("pointermove",e=>{
       if(!this.drag||e.pointerId!==this.drag.id) return;
-      this.yaw+=(e.clientX-this.drag.x)*.009;
+      // Decreasing yaw moves the front surface to the right on screen.
+      this.yaw-=(e.clientX-this.drag.x)*.009;
       this.elevation=Math.max(-PI/2,Math.min(PI/2,this.elevation+(e.clientY-this.drag.y)*.009));
       this.drag.x=e.clientX;this.drag.y=e.clientY;this.request();
     });
@@ -115,7 +116,7 @@ class Renderer {
       e.preventDefault();this.zoom=Math.max(.7,Math.min(1.6,this.zoom*Math.exp(-e.deltaY*.001)));this.request();
     },{passive:false});
     canvas.addEventListener("keydown",e=>{
-      const change={ArrowLeft:[-.12,0],ArrowRight:[.12,0],ArrowUp:[0,.12],ArrowDown:[0,-.12]}[e.key];
+      const change={ArrowLeft:[.12,0],ArrowRight:[-.12,0],ArrowUp:[0,.12],ArrowDown:[0,-.12]}[e.key];
       if(change) {
         e.preventDefault();this.yaw+=change[0];
         this.elevation=Math.max(-PI/2,Math.min(PI/2,this.elevation+change[1]));this.request();

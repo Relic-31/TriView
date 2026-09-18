@@ -176,3 +176,29 @@ test("changing the model clears an old success timer and returns error state to 
   assert.equal(h.q,selected);
   assert.equal(selected.model.kind,48);
 });
+
+test("horizontal mouse and touch drags move the front of the model with the pointer",()=>{
+  const h=boot(),canvas=h.elements.model,m=h.q.model;
+  const frontPoint=[m.W/2,0,m.H/2];
+  for(const pointerType of ["mouse","touch"])for(const dx of [-40,40]) {
+    h.renderer.setCamera("front");
+    const before=h.renderer.camera(frontPoint)[0];
+    canvas.emit("pointerdown",{pointerType,clientX:100,clientY:100});
+    canvas.emit("pointermove",{pointerType,clientX:100+dx,clientY:100});
+    canvas.emit("pointerup",{pointerType});
+    const after=h.renderer.camera(frontPoint)[0];
+    assert.ok((after-before)*dx>0,pointerType+" drag must follow the horizontal pointer direction");
+    assert.equal(h.renderer.elevation,0,"horizontal motion must not introduce vertical rotation");
+  }
+});
+
+test("horizontal arrow keys follow the same screen direction as dragging",()=>{
+  const h=boot(),canvas=h.elements.model,m=h.q.model;
+  const frontPoint=[m.W/2,0,m.H/2];
+  for(const [key,direction] of [["ArrowLeft",-1],["ArrowRight",1]]) {
+    h.renderer.setCamera("front");
+    const before=h.renderer.camera(frontPoint)[0];
+    canvas.emit("keydown",{key});
+    assert.ok((h.renderer.camera(frontPoint)[0]-before)*direction>0,key+" must move the front surface in its screen direction");
+  }
+});
